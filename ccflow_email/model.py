@@ -1,7 +1,7 @@
 from typing import Union
 
 from ccflow import BaseModel
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, model_validator
 
 __all__ = (
     "Message",
@@ -14,14 +14,47 @@ __all__ = (
 class Message(BaseModel):
     content: str = Field(default=None, description="HTML content of the email")
     subject: str = Field(default=None, description="Subject of the email")
-    mail_from: Union[tuple[str, str], str] = Field(default=None, description="Sender email address")
+    from_: Union[tuple[str, str], str] = Field(default=None, description="Sender email address")
+    to_: Union[tuple[str, str], str] = Field(default=None, description="Recipient email address")
+    cc: Union[tuple[str, str], str, None] = Field(default=None, description="CC email address")
+    bcc: Union[tuple[str, str], str, None] = Field(default=None, description="BCC email address")
 
-    @field_validator("mail_from")
-    def validate_mail_from(cls, v):
+    @field_validator("from_")
+    def _validate_from(cls, v):
         # If tuple, must be (name, email)
         if isinstance(v, tuple):
             if len(v) != 2:
-                raise ValueError("mail_from tuple must be (name, email)")
+                raise ValueError("from_ tuple must be (name, email)")
+            if not v[0]:
+                return v[1]
+        return v
+
+    @field_validator("to_")
+    def _validate_to(cls, v):
+        # If tuple, must be (name, email)
+        if isinstance(v, tuple):
+            if len(v) != 2:
+                raise ValueError("to_ tuple must be (name, email)")
+            if not v[0]:
+                return v[1]
+        return v
+
+    @field_validator("cc")
+    def _validate_cc(cls, v):
+        # If tuple, must be (name, email)
+        if isinstance(v, tuple):
+            if len(v) != 2:
+                raise ValueError("cc tuple must be (name, email)")
+            if not v[0]:
+                return v[1]
+        return v
+
+    @field_validator("bcc")
+    def _validate_bcc(cls, v):
+        # If tuple, must be (name, email)
+        if isinstance(v, tuple):
+            if len(v) != 2:
+                raise ValueError("bcc tuple must be (name, email)")
             if not v[0]:
                 return v[1]
         return v
@@ -69,11 +102,35 @@ class Email(BaseModel):
     smtp: SMTP = Field(description="SMTP server configuration")
     attachments: list[Attachment] = Field(default_factory=list, description="List of email attachments")
 
-    def send(self, to: Union[str, list[str]], render: dict = None):
+    @model_validator(mode="after")
+    def _validate_from(self):
+        if not self.message.from_ and not self.smtp.user:
+            raise ValueError("Either message.from_ or smtp.user must be set")
+        if not self.message.from_:
+            self.message.from_ = self.smtp.user
+        if not self.smtp.user:
+            self.smtp.user = self.message.from_[1] if isinstance(self.message.from_, tuple) else self.message.from_
+        return self
+
+    def send(self, to: Union[str, list[str]] = None, render: dict = None):
         # NOTE: defer import
         from emails import Message as EmailMessage
 
-        msg = EmailMessage(html=self.message.content, subject=self.message.subject, mail_from=self.message.mail_from)
+        # validate to
+        if not to and not self.message.to_:
+            # send back to from_
+            to = self.message.from_
+        elif not to:
+            to = self.message.to_
+
+        msg = EmailMessage(
+            html=self.message.content,
+            subject=self.message.subject,
+            mail_from=self.message.from_,
+            mail_to=to,
+            cc=self.message.cc,
+            bcc=self.message.bcc,
+        )
 
         for attachment in self.attachments:
             msg.attach(filename=attachment.filename, content_disposition=attachment.content_disposition, data=attachment.data)

@@ -9,7 +9,7 @@ from ccflow_email import SMTP, Attachment, Email, Message
 class TestEmail:
     def test_email_creation(self):
         email = Email(
-            message=Message(content="<p>Hello, World!</p>", subject="Test Email", mail_from=("Test", "test@example.com")),
+            message=Message(content="<p>Hello, World!</p>", subject="Test Email", from_=("Test", "test@example.com")),
             smtp=SMTP(host="smtp.example.com", port=587, user="user", password="pass", tls=True),
             attachments=[Attachment(filename="test.txt", content_disposition="attachment", data=b"Test file content")],
         )
@@ -23,7 +23,7 @@ class TestEmail:
             message=Message(
                 content="<p>Hello, World!</p>",
                 subject="Test Email",
-                mail_from=("Test", environ["SMTP_USER"]),
+                from_=("Test", environ["SMTP_USER"]),
             ),
             smtp=SMTP(
                 host=environ["SMTP_HOST"],
@@ -54,7 +54,7 @@ class TestEmail:
         message = Message(
             content="This is a test email sent from ccflow_email.",
             subject="Test Email",
-            mail_from="user",
+            from_="user",
         )
 
         email = Email(
