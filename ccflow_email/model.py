@@ -1,4 +1,4 @@
-from typing import Union
+from typing import List, Optional, Tuple, Union
 
 from ccflow import BaseModel
 from pydantic import Field, field_validator, model_validator
@@ -12,12 +12,12 @@ __all__ = (
 
 
 class Message(BaseModel):
-    content: str = Field(default=None, description="HTML content of the email")
-    subject: str = Field(default=None, description="Subject of the email")
-    from_: Union[tuple[str, str], str] = Field(default=None, description="Sender email address")
-    to_: Union[tuple[str, str], str] = Field(default=None, description="Recipient email address")
-    cc: Union[tuple[str, str], str, None] = Field(default=None, description="CC email address")
-    bcc: Union[tuple[str, str], str, None] = Field(default=None, description="BCC email address")
+    content: Optional[str] = Field(default=None, description="HTML content of the email")
+    subject: Optional[str] = Field(default=None, description="Subject of the email")
+    from_: Optional[Union[Tuple[str, str], str]] = Field(default=None, description="Sender email address")
+    to_: Optional[Union[Tuple[str, str], str]] = Field(default=None, description="Recipient email address")
+    cc: Optional[Union[Tuple[str, str], str]] = Field(default=None, description="CC email address")
+    bcc: Optional[Union[Tuple[str, str], str]] = Field(default=None, description="BCC email address")
 
     @field_validator("from_")
     def _validate_from(cls, v):
@@ -62,33 +62,12 @@ class Message(BaseModel):
 
 class SMTP(BaseModel):
     host: str = Field(..., description="SMTP server host")
-    port: int = Field(default=25, description="SMTP server port")
-    user: str = Field(default=None, description="SMTP server username")
-    password: str = Field(default=None, description="SMTP server password")
-    tls: bool = Field(default=False, description="Use TLS for SMTP connection")
-    ssl: bool = Field(default=False, description="Use SSL for SMTP connection")
-    timeout: int = Field(default=30, description="Timeout for SMTP connection in seconds")
-
-    @field_validator("port")
-    def validate_port(cls, v):
-        # Must be a normal smtp port
-        if v not in [25, 465, 587]:
-            raise ValueError("Invalid SMTP port")
-        return v
-
-    @field_validator("tls")
-    def validate_tls(cls, v, info):
-        # If port is 465, tls must be False
-        if info.data.get("port") == 465 and v:
-            raise ValueError("TLS cannot be True when port is 465")
-        return v
-
-    @field_validator("ssl")
-    def validate_ssl(cls, v, info):
-        # If port is 587 or 25, ssl must be False
-        if info.data.get("port") in [25, 587] and v:
-            raise ValueError("SSL cannot be True when port is 25 or 587")
-        return v
+    port: Optional[int] = Field(default=25, description="SMTP server port")
+    user: Optional[str] = Field(default=None, description="SMTP server username")
+    password: Optional[str] = Field(default=None, description="SMTP server password")
+    tls: Optional[bool] = Field(default=False, description="Use TLS for SMTP connection")
+    ssl: Optional[bool] = Field(default=False, description="Use SSL for SMTP connection")
+    timeout: Optional[int] = Field(default=30, description="Timeout for SMTP connection in seconds")
 
 
 class Attachment(BaseModel):
@@ -100,7 +79,7 @@ class Attachment(BaseModel):
 class Email(BaseModel):
     message: Message = Field(description="Email message details")
     smtp: SMTP = Field(description="SMTP server configuration")
-    attachments: list[Attachment] = Field(default_factory=list, description="List of email attachments")
+    attachments: Optional[List[Attachment]] = Field(default_factory=list, description="List of email attachments")
 
     @model_validator(mode="after")
     def _validate_from(self):
@@ -135,7 +114,7 @@ class Email(BaseModel):
         for attachment in self.attachments:
             msg.attach(filename=attachment.filename, content_disposition=attachment.content_disposition, data=attachment.data)
 
-        smtp_config = self.smtp.model_dump(exclude_none=True, exclude=["type_"])
+        smtp_config = self.smtp.model_dump(exclude_unset=True, exclude_none=True, exclude=["type_"])
         smtp_config["fail_silently"] = False
         response = msg.send(to=to, render=render or {}, smtp=smtp_config)
         return response
