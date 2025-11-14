@@ -8,7 +8,7 @@ authors = [{name = "1kbgz", email = "dev@1kbgz.com"}]
 description = "ccflow models for email"
 readme = "README.md"
 license = { text = "Apache-2.0" }
-version = "0.2.0"
+version = "0.2.1"
 requires-python = ">=3.10"
 keywords = []
 
@@ -54,7 +54,7 @@ Repository = "https://github.com/1kbgz/ccflow-email"
 Homepage = "https://github.com/1kbgz/ccflow-email"
 
 [tool.bumpversion]
-current_version = "0.2.0"
+current_version = "0.2.1"
 commit = true
 tag = true
 commit_args = "-s"
