@@ -53,6 +53,10 @@ jobs:
 
     - name: Test
       run: make coverage
+      env:
+        SMTP_HOST: ${{ secrets.SMTP_HOST }}
+        SMTP_USER: ${{ secrets.SMTP_USER }}
+        SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
 
     - name: Upload test results (Python)
       uses: actions/upload-artifact@v5
