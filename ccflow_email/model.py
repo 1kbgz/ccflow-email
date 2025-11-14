@@ -20,6 +20,7 @@ class Message(BaseModel):
     bcc: Optional[Union[Tuple[str, str], str]] = Field(default=None, description="BCC email address")
 
     @field_validator("from_")
+    @classmethod
     def _validate_from(cls, v):
         # If tuple, must be (name, email)
         if isinstance(v, tuple):
@@ -30,6 +31,7 @@ class Message(BaseModel):
         return v
 
     @field_validator("to_")
+    @classmethod
     def _validate_to(cls, v):
         # If tuple, must be (name, email)
         if isinstance(v, tuple):
@@ -40,6 +42,7 @@ class Message(BaseModel):
         return v
 
     @field_validator("cc")
+    @classmethod
     def _validate_cc(cls, v):
         # If tuple, must be (name, email)
         if isinstance(v, tuple):
@@ -50,6 +53,7 @@ class Message(BaseModel):
         return v
 
     @field_validator("bcc")
+    @classmethod
     def _validate_bcc(cls, v):
         # If tuple, must be (name, email)
         if isinstance(v, tuple):
