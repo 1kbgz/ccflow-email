@@ -1,23 +1,21 @@
-from typing import List, Optional, Tuple, Union
-
 from ccflow import BaseModel
 from pydantic import Field, field_validator, model_validator
 
 __all__ = (
-    "Message",
     "SMTP",
     "Attachment",
     "Email",
+    "Message",
 )
 
 
 class Message(BaseModel):
-    content: Optional[str] = Field(default=None, description="HTML content of the email")
-    subject: Optional[str] = Field(default=None, description="Subject of the email")
-    from_: Optional[Union[Tuple[str, str], str]] = Field(default=None, description="Sender email address")
-    to_: Optional[Union[Tuple[str, str], str]] = Field(default=None, description="Recipient email address")
-    cc: Optional[Union[Tuple[str, str], str]] = Field(default=None, description="CC email address")
-    bcc: Optional[Union[Tuple[str, str], str]] = Field(default=None, description="BCC email address")
+    content: str | None = Field(default=None, description="HTML content of the email")
+    subject: str | None = Field(default=None, description="Subject of the email")
+    from_: tuple[str, str] | str | None = Field(default=None, description="Sender email address")
+    to_: tuple[str, str] | str | None = Field(default=None, description="Recipient email address")
+    cc: tuple[str, str] | str | None = Field(default=None, description="CC email address")
+    bcc: tuple[str, str] | str | None = Field(default=None, description="BCC email address")
 
     @field_validator("from_")
     @classmethod
@@ -66,12 +64,12 @@ class Message(BaseModel):
 
 class SMTP(BaseModel):
     host: str = Field(..., description="SMTP server host")
-    port: Optional[int] = Field(default=25, description="SMTP server port")
-    user: Optional[str] = Field(default=None, description="SMTP server username")
-    password: Optional[str] = Field(default=None, description="SMTP server password")
-    tls: Optional[bool] = Field(default=False, description="Use TLS for SMTP connection")
-    ssl: Optional[bool] = Field(default=False, description="Use SSL for SMTP connection")
-    timeout: Optional[int] = Field(default=30, description="Timeout for SMTP connection in seconds")
+    port: int | None = Field(default=25, description="SMTP server port")
+    user: str | None = Field(default=None, description="SMTP server username")
+    password: str | None = Field(default=None, description="SMTP server password")
+    tls: bool | None = Field(default=False, description="Use TLS for SMTP connection")
+    ssl: bool | None = Field(default=False, description="Use SSL for SMTP connection")
+    timeout: int | None = Field(default=30, description="Timeout for SMTP connection in seconds")
 
 
 class Attachment(BaseModel):
@@ -83,7 +81,7 @@ class Attachment(BaseModel):
 class Email(BaseModel):
     message: Message = Field(description="Email message details")
     smtp: SMTP = Field(description="SMTP server configuration")
-    attachments: Optional[List[Attachment]] = Field(default_factory=list, description="List of email attachments")
+    attachments: list[Attachment] | None = Field(default_factory=list, description="List of email attachments")
 
     @model_validator(mode="after")
     def _validate_from(self):
@@ -95,7 +93,7 @@ class Email(BaseModel):
             self.smtp.user = self.message.from_[1] if isinstance(self.message.from_, tuple) else self.message.from_
         return self
 
-    def send(self, to: Union[str, list[str]] = None, render: dict = None):
+    def send(self, to: str | list[str] | None = None, render: dict | None = None):
         # NOTE: defer import
         from emails import Message as EmailMessage
 
