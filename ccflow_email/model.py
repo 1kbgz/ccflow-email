@@ -93,7 +93,7 @@ class Email(BaseModel):
             self.smtp.user = self.message.from_[1] if isinstance(self.message.from_, tuple) else self.message.from_
         return self
 
-    def send(self, to: str | list[str] | None = None, render: dict | None = None):
+    def send(self, to: str | tuple[str | None, str] | list[str | tuple[str | None, str]] | None = None, render: dict | None = None):
         # NOTE: defer import
         from emails import Message as EmailMessage
 
@@ -113,10 +113,10 @@ class Email(BaseModel):
             bcc=self.message.bcc,
         )
 
-        for attachment in self.attachments:
+        for attachment in self.attachments or ():
             msg.attach(filename=attachment.filename, content_disposition=attachment.content_disposition, data=attachment.data)
 
-        smtp_config = self.smtp.model_dump(exclude_unset=True, exclude_none=True, exclude=["type_"])
+        smtp_config = self.smtp.model_dump(exclude_unset=True, exclude_none=True, exclude={"type_"})
         smtp_config["fail_silently"] = False
         response = msg.send(to=to, render=render or {}, smtp=smtp_config)
         return response

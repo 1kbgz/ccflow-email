@@ -15,6 +15,7 @@ class TestEmail:
         )
         assert email.message.subject == "Test Email"
         assert email.smtp.host == "smtp.example.com"
+        assert email.attachments is not None
         assert email.attachments[0].filename == "test.txt"
 
     @pytest.mark.skipif(not environ.get("SMTP_HOST"), reason="SMTP server not configured")
@@ -73,3 +74,17 @@ class TestEmail:
 
         assert response.success is True
         assert response.status_text == b"Message received"
+
+    def test_send_without_attachments(self):
+        email = Email(
+            message=Message(content="Hello", subject="Test", from_="sender@example.com"),
+            smtp=SMTP(host="smtp.example.com"),
+            attachments=None,
+        )
+        recipient = ("Recipient", "recipient@example.com")
+        with patch("emails.Message") as message:
+            response = email.send(to=recipient)
+        message.assert_called_once_with(html="Hello", subject="Test", mail_from="sender@example.com", mail_to=recipient, cc=None, bcc=None)
+        message.return_value.attach.assert_not_called()
+        assert response is message.return_value.send.return_value
+        assert "type_" not in message.return_value.send.call_args.kwargs["smtp"]
