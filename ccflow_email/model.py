@@ -66,7 +66,7 @@ class SMTP(BaseModel):
     host: str = Field(..., description="SMTP server host")
     port: int | None = Field(default=25, description="SMTP server port")
     user: str | None = Field(default=None, description="SMTP server username")
-    password: str | None = Field(default=None, description="SMTP server password")
+    password: str | None = Field(default=None, repr=False, description="SMTP server password")
     tls: bool | None = Field(default=False, description="Use TLS for SMTP connection")
     ssl: bool | None = Field(default=False, description="Use SSL for SMTP connection")
     timeout: int | None = Field(default=30, description="Timeout for SMTP connection in seconds")

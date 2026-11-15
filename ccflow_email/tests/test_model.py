@@ -88,3 +88,14 @@ class TestEmail:
         message.return_value.attach.assert_not_called()
         assert response is message.return_value.send.return_value
         assert "type_" not in message.return_value.send.call_args.kwargs["smtp"]
+
+
+class TestSMTP:
+    def test_repr_omits_password(self):
+        smtp = SMTP(host="smtp.example.com", user="user", password="smtp-secret")
+        email = Email(message=Message(content="Hi", subject="Test", from_="user"), smtp=smtp)
+
+        for value in (smtp, email):
+            assert "smtp-secret" not in repr(value)
+            assert "smtp-secret" not in str(value)
+        assert "smtp.example.com" in repr(smtp)
